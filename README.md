@@ -12,7 +12,7 @@ to match your desired configuration. For example:
 
 ```hcl
 module "backend" {
-  source = "github.com/codeforamerica/tofu-modules/aws/backend"
+  source = "github.com/codeforamerica/tofu-modules-aws-backend"
 
   project     = "my-project"
   environment = "dev"
