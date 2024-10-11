@@ -1,5 +1,7 @@
 # AWS Backend Module
 
+[![Main Checks](https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml/badge.svg)](https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml) ![GitHub Release](https://img.shields.io/github/v/release/codeforamerica/tofu-modules-aws-backend?logo=github&label=Latest%20Release)
+
 This module creates an AWS backend for OpenTofu.
 
 ## Usage
