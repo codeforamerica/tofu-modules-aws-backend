@@ -57,7 +57,7 @@ jobs:
           # `#.#.#-<suffix>.#` where the suffix is optional.
           script: |
             const message = '${{ github.event.head_commit.message }}'
-            const regex = /^bump:.+(?<version>\d+\.\d+\.\d+[\da-z.-]*) \(#\d+\)$/
+            const regex = /^bump:.+(?<version>\d+\.\d+\.\d+[\da-z.-]*) \(#\d+\)$/m
             const version = message.match(regex).groups.version
             console.log(version)
             return version
