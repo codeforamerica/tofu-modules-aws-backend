@@ -1,20 +1,21 @@
 # AWS Backend Module
 
-[![Main Checks](https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml/badge.svg)](https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml) ![GitHub Release](https://img.shields.io/github/v/release/codeforamerica/tofu-modules-aws-backend?logo=github&label=Latest%20Release)
+[![Main Checks][badge-checks]][code-checks] [![GitHub Release][badge-release]][latest-release]
 
 This module creates an AWS backend for OpenTofu.
 
 ## Usage
 
-> **Note:** These steps must be completed _before_ adding the backend
-> configuration to your `main.tf` file.
+> [!NOTE]
+> These steps must be completed _before_ adding the backend configuration to
+> your `main.tf` file.
 
 Add this module to your `main.tf` (or appropriate) file and configure the inputs
 to match your desired configuration. For example:
 
 ```hcl
 module "backend" {
-  source = "github.com/codeforamerica/tofu-modules-aws-backend"
+  source = "github.com/codeforamerica/tofu-modules-aws-backend?ref=1.0.0"
 
   project     = "my-project"
   environment = "dev"
@@ -68,10 +69,14 @@ You now have a fully configured AWS backend for your project!
 | key_recovery_period | The number of days to retain the KMS key for recovery after deletion. | `number` | `30`    |    no    |
 | tags                | Optional tags to be applied to all resources.                         | `list`   | `[]`    |    no    |
 
-
 ## Outputs
 
 | Name    | Description                              | Type     |
 |---------|------------------------------------------|----------|
 | bucket  | Name of the S3 bucket for state storage. | `string` |
 | kms_key | KMS key used to encrypt state.           | `string` |
+
+[badge-checks]: https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml/badge.svg
+[badge-release]: https://img.shields.io/github/v/release/codeforamerica/tofu-modules-aws-backend?logo=github&label=Latest%20Release
+[code-checks]: https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml
+[latest-release]: https://github.com/codeforamerica/tofu-modules-aws-backend/releases/latest
