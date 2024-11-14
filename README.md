@@ -1,6 +1,6 @@
 # AWS Backend Module
 
-[![Main Checks](https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml/badge.svg)](https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml) ![GitHub Release](https://img.shields.io/github/v/release/codeforamerica/tofu-modules-aws-backend?logo=github&label=Latest%20Release)
+[![Main Checks][badge-checks]][code-checks] [![GitHub Release][badge-release]][latest-release]
 
 This module creates an AWS backend for OpenTofu.
 
@@ -69,10 +69,14 @@ You now have a fully configured AWS backend for your project!
 | key_recovery_period | The number of days to retain the KMS key for recovery after deletion. | `number` | `30`    |    no    |
 | tags                | Optional tags to be applied to all resources.                         | `list`   | `[]`    |    no    |
 
-
 ## Outputs
 
 | Name    | Description                              | Type     |
 |---------|------------------------------------------|----------|
 | bucket  | Name of the S3 bucket for state storage. | `string` |
 | kms_key | KMS key used to encrypt state.           | `string` |
+
+[badge-checks]: https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml/badge.svg
+[badge-release]: https://img.shields.io/github/v/release/codeforamerica/tofu-modules-aws-backend?logo=github&label=Latest%20Release
+[code-checks]: https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml
+[latest-release]: https://github.com/codeforamerica/tofu-modules-aws-backend/releases/latest
