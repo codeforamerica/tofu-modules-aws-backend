@@ -6,15 +6,16 @@ This module creates an AWS backend for OpenTofu.
 
 ## Usage
 
-> **Note:** These steps must be completed _before_ adding the backend
-> configuration to your `main.tf` file.
+> [!NOTE]
+> These steps must be completed _before_ adding the backend configuration to
+> your `main.tf` file.
 
 Add this module to your `main.tf` (or appropriate) file and configure the inputs
 to match your desired configuration. For example:
 
 ```hcl
 module "backend" {
-  source = "github.com/codeforamerica/tofu-modules-aws-backend"
+  source = "github.com/codeforamerica/tofu-modules-aws-backend?ref=1.0.0"
 
   project     = "my-project"
   environment = "dev"
