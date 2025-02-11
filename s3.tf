@@ -5,7 +5,7 @@ resource "aws_s3_bucket" "tfstate" {
     prevent_destroy = true
   }
 
-  tags = var.tags
+  tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
 resource "aws_s3_bucket_public_access_block" "tfstate" {

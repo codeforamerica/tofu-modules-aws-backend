@@ -17,7 +17,7 @@ resource "aws_kms_key" "backend" {
     bucket_arn : aws_s3_bucket.tfstate.arn
   })
 
-  tags = var.tags
+  tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
 resource "aws_kms_alias" "backend" {
@@ -45,7 +45,7 @@ resource "aws_dynamodb_table" "tfstate_lock" {
     enabled = true
   }
 
-  tags = var.tags
+  tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
 output "bucket" {
