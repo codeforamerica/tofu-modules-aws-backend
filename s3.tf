@@ -52,3 +52,20 @@ resource "aws_s3_bucket_policy" "tfstate" {
     bucket : aws_s3_bucket.tfstate.bucket
   })
 }
+
+resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+
+  rule {
+    id = "state"
+    status = "Enabled"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = var.state_version_expiration
+    }
+  }
+}

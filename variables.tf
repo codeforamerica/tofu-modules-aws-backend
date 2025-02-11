@@ -20,6 +20,12 @@ variable "project" {
   description = "Project that these resources are supporting."
 }
 
+variable "state_version_expiration" {
+  type = number
+  description = "Age (in days) before non-current versions of the state file are expired."
+  default = 30
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags to apply to all resources."
