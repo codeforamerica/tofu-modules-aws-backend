@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "tfstate" {
-  bucket = "${local.prefix}-tfstate"
+  bucket        = "${local.prefix}-tfstate"
+  force_destroy = var.force_delete
 
   lifecycle {
     prevent_destroy = true
@@ -57,7 +58,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
   rule {
-    id = "state"
+    id     = "state"
     status = "Enabled"
 
     abort_incomplete_multipart_upload {

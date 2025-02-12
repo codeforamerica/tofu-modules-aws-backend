@@ -31,6 +31,8 @@ resource "aws_dynamodb_table" "tfstate_lock" {
   write_capacity = 1
   hash_key       = "LockID"
 
+  deletion_protection_enabled = !var.force_delete
+
   attribute {
     name = "LockID"
     type = "S"

@@ -4,6 +4,12 @@ variable "environment" {
   description = "Environment for the deployment."
 }
 
+variable "force_delete" {
+  type        = bool
+  description = "Force delete resources on destroy. This must be set to true and applied before resources can be destroyed."
+  default     = false
+}
+
 variable "key_recovery_period" {
   type        = number
   default     = 30
@@ -21,9 +27,9 @@ variable "project" {
 }
 
 variable "state_version_expiration" {
-  type = number
+  type        = number
   description = "Age (in days) before non-current versions of the state file are expired."
-  default = 30
+  default     = 30
 }
 
 variable "tags" {
