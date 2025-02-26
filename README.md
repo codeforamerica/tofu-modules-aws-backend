@@ -65,6 +65,7 @@ You now have a fully configured AWS backend for your project!
 | Name                | Description                                                           | Type     | Default | Required |
 |---------------------|-----------------------------------------------------------------------|----------|---------|:--------:|
 | project             | The name of the project.                                              | `string` | n/a     |   yes    |
+| bucket_suffix       | Adds a random suffix to the bucket name to ensure its uniqueness.     | `bool`   | `false` |    no    |
 | environment         | The environment for the project.                                      | `string` | `"dev"` |    no    |
 | key_recovery_period | The number of days to retain the KMS key for recovery after deletion. | `number` | `30`    |    no    |
 | tags                | Optional tags to be applied to all resources.                         | `list`   | `[]`    |    no    |

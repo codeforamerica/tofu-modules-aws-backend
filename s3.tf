@@ -1,5 +1,6 @@
 resource "aws_s3_bucket" "tfstate" {
-  bucket        = "${local.prefix}-tfstate"
+  bucket        = var.bucket_suffix ? null : "${local.prefix}-tfstate"
+  bucket_prefix = var.bucket_suffix ? "${local.prefix}-tfstate-" : null
   force_destroy = var.force_delete
 
   lifecycle {

@@ -1,3 +1,9 @@
+variable "bucket_suffix" {
+  type        = bool
+  description = "Adds a random suffix to the bucket name to ensure its uniqueness."
+  default     = false
+}
+
 variable "environment" {
   type        = string
   default     = "dev"
