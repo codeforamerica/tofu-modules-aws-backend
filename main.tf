@@ -49,11 +49,3 @@ resource "aws_dynamodb_table" "tfstate_lock" {
 
   tags = merge({ use = "infrastructure-state" }, var.tags)
 }
-
-output "bucket" {
-  value = aws_s3_bucket.tfstate.id
-}
-
-output "kms_key" {
-  value = aws_kms_key.backend.id
-}
