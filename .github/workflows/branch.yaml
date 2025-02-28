@@ -9,6 +9,9 @@ jobs:
   lint:
     name: Lint updated files
     runs-on: ubuntu-latest
+    env:
+      # Required to avoid rate limiting when downloading plugins.
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
@@ -24,7 +27,7 @@ jobs:
       - name: Init TFLint
         run: tflint --init
       - name: Run TFLint
-        run: tflint --format compact --recursive
+        run: tflint --format compact --recursive --config "$GITHUB_WORKSPACE/.tflint.hcl"
 
   trivy:
     name: Run security scan
