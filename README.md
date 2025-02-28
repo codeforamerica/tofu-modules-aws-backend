@@ -62,13 +62,15 @@ You now have a fully configured AWS backend for your project!
 
 ## Inputs
 
-| Name                | Description                                                           | Type     | Default | Required |
-|---------------------|-----------------------------------------------------------------------|----------|---------|:--------:|
-| project             | The name of the project.                                              | `string` | n/a     |   yes    |
-| bucket_suffix       | Adds a random suffix to the bucket name to ensure its uniqueness.     | `bool`   | `false` |    no    |
-| environment         | The environment for the project.                                      | `string` | `"dev"` |    no    |
-| key_recovery_period | The number of days to retain the KMS key for recovery after deletion. | `number` | `30`    |    no    |
-| tags                | Optional tags to be applied to all resources.                         | `list`   | `[]`    |    no    |
+| Name                     | Description                                                                                                | Type     | Default | Required |
+|--------------------------|------------------------------------------------------------------------------------------------------------|----------|---------|:--------:|
+| project                  | The name of the project.                                                                                   | `string` | n/a     |   yes    |
+| bucket_suffix            | Adds a random suffix to the bucket name to ensure its uniqueness.                                          | `bool`   | `false` |    no    |
+| environment              | The environment for the project.                                                                           | `string` | `"dev"` |    no    |
+| force_delete             | Force delete resources on destroy. This must be set to true and applied before resources can be destroyed. | `bool`   | `false` |    no    |
+| key_recovery_period      | The number of days to retain the KMS key for recovery after deletion.                                      | `number` | `30`    |    no    |
+| state_version_expiration | Age (in days) before non-current versions of the state file are expired.                                   | `number` | `30`    |    no    |
+| tags                     | Optional tags to be applied to all resources.                                                              | `list`   | `[]`    |    no    |
 
 ## Outputs
 
