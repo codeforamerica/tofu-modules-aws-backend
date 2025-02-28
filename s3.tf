@@ -1,11 +1,13 @@
 resource "aws_s3_bucket" "tfstate" {
-  bucket = "${local.prefix}-tfstate"
+  bucket        = var.bucket_suffix ? null : "${local.prefix}-tfstate"
+  bucket_prefix = var.bucket_suffix ? "${local.prefix}-tfstate-" : null
+  force_destroy = var.force_delete
 
   lifecycle {
     prevent_destroy = true
   }
 
-  tags = var.tags
+  tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
 resource "aws_s3_bucket_public_access_block" "tfstate" {
@@ -51,4 +53,21 @@ resource "aws_s3_bucket_policy" "tfstate" {
     partition : data.aws_partition.current.partition
     bucket : aws_s3_bucket.tfstate.bucket
   })
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "tfstate" {
+  bucket = aws_s3_bucket.tfstate.id
+
+  rule {
+    id     = "state"
+    status = "Enabled"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = var.state_version_expiration
+    }
+  }
 }

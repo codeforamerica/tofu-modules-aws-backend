@@ -1,7 +1,19 @@
+variable "bucket_suffix" {
+  type        = bool
+  description = "Adds a random suffix to the bucket name to ensure its uniqueness."
+  default     = false
+}
+
 variable "environment" {
   type        = string
   default     = "dev"
   description = "Environment for the deployment."
+}
+
+variable "force_delete" {
+  type        = bool
+  description = "Force delete resources on destroy. This must be set to true and applied before resources can be destroyed."
+  default     = false
 }
 
 variable "key_recovery_period" {
@@ -18,6 +30,12 @@ variable "key_recovery_period" {
 variable "project" {
   type        = string
   description = "Project that these resources are supporting."
+}
+
+variable "state_version_expiration" {
+  type        = number
+  description = "Age (in days) before non-current versions of the state file are expired."
+  default     = 30
 }
 
 variable "tags" {

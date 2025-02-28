@@ -4,9 +4,7 @@
         {
             "Sid": "AllowSSLRequestsOnly",
             "Effect": "Deny",
-            "Principal": {
-                "Service": "config.amazonaws.com"
-            },
+            "Principal": "*",
             "Action": [
                 "s3:*"
             ],
