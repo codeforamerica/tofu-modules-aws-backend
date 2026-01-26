@@ -3,10 +3,6 @@ resource "aws_s3_bucket" "tfstate" {
   bucket_prefix = var.bucket_suffix ? "${local.prefix}-tfstate-" : null
   force_destroy = var.force_delete
 
-  lifecycle {
-    prevent_destroy = true
-  }
-
   tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
