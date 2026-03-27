@@ -26,6 +26,8 @@ resource "aws_kms_alias" "backend" {
 }
 
 resource "aws_dynamodb_table" "tfstate_lock" {
+  for_each = var.create_dynamodb_table ? toset(["this"]) : toset([])
+
   name           = "${var.environment}.tfstate"
   read_capacity  = 1
   write_capacity = 1
