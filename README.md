@@ -101,6 +101,25 @@ changes to destroy the DynamoDB table.
 You can now set `force_delete` to `true` and apply the changes to re-enable
 deletion protection for other resources.
 
+## Delete protection
+
+By default (`force_delete = false`), the state bucket's policy denies
+`s3:DeleteBucket` and `s3:DeleteObjectVersion` for every principal, including
+the one running `tofu apply`/`destroy`. Plain `s3:DeleteObject` is still
+allowed — since versioning is always enabled, this only adds a delete marker
+rather than destroying data, and is required for S3 native state locking's
+lock-file release to keep working. To actually delete the bucket or purge
+old versions, set `force_delete = true` and apply first, which removes the
+deny statements (and, on the DynamoDB table, disables deletion protection).
+
+## Cross-region replication
+
+By default (`configure_cross_region_replication = true`), the module creates
+a second S3 bucket (in `us-west-2`, or `us-east-1` if the module itself is
+deployed in a `us-west-*` region) with its own KMS key, and replicates every
+object in the state bucket to it. Set `configure_cross_region_replication` to
+`false` to disable, or `replica_region` to override the destination region.
+
 ## Inputs
 
 > [!WARNING]
@@ -112,23 +131,27 @@ deletion protection for other resources.
 > If you're not currently using S3 state locking, we recommend you take the time
 > to [migrate][migrate-state-lock].
 
-| Name                     | Description                                                                                                                                                | Type     | Default | Required |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------- | :------: |
-| project                  | The name of the project.                                                                                                                                   | `string` | n/a     |   yes    |
-| bucket_suffix            | Adds a random suffix to the bucket name to ensure its uniqueness.                                                                                          | `bool`   | `false` |    no    |
-| create_dynamodb_table    | Whether to create a DynamoDB table to store the Terraform state lock. If you're exclusively using [S3 state locking][s3-locking], this is safe to disable. | `bool`   | `true`  |    no    |
-| environment              | The environment for the project.                                                                                                                           | `string` | `"dev"` |    no    |
-| force_delete             | Force delete resources on destroy. This must be set to true and applied before resources can be destroyed.                                                 | `bool`   | `false` |    no    |
-| key_recovery_period      | Recovery period for deleted KMS keys in days. Must be between `7` and `30`.                                                                                | `number` | `30`    |    no    |
-| state_version_expiration | Age (in days) before non-current versions of the state file are expired.                                                                                   | `number` | `30`    |    no    |
-| tags                     | Optional tags to be applied to all resources.                                                                                                              | `list`   | `[]`    |    no    |
+| Name                               | Description                                                                                                                                                | Type     | Default | Required |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------- | :------: |
+| project                            | The name of the project.                                                                                                                                   | `string` | n/a     |   yes    |
+| bucket_suffix                      | Adds a random suffix to the bucket name to ensure its uniqueness.                                                                                          | `bool`   | `false` |    no    |
+| configure_cross_region_replication | Whether to replicate the state bucket to another region for disaster recovery.                                                                             | `bool`   | `true`  |    no    |
+| create_dynamodb_table              | Whether to create a DynamoDB table to store the Terraform state lock. If you're exclusively using [S3 state locking][s3-locking], this is safe to disable. | `bool`   | `true`  |    no    |
+| environment                        | The environment for the project.                                                                                                                           | `string` | `"dev"` |    no    |
+| force_delete                       | Force delete resources on destroy. This must be set to true and applied before resources can be destroyed.                                                 | `bool`   | `false` |    no    |
+| key_recovery_period                | Recovery period for deleted KMS keys in days. Must be between `7` and `30`.                                                                                | `number` | `30`    |    no    |
+| replica_region                     | Region to replicate the state bucket to. Defaults to `us-west-2` (or `us-east-1` if deployed in a `us-west-*` region).                                     | `string` | `null`  |    no    |
+| state_version_expiration           | Age (in days) before non-current versions of the state file are expired.                                                                                   | `number` | `30`    |    no    |
+| tags                               | Optional tags to be applied to all resources.                                                                                                              | `list`   | `[]`    |    no    |
 
 ## Outputs
 
-| Name    | Description                              | Type     |
-| ------- | ---------------------------------------- | -------- |
-| bucket  | Name of the S3 bucket for state storage. | `string` |
-| kms_key | KMS key used to encrypt state.           | `string` |
+| Name           | Description                                                                        | Type     |
+| -------------- | ----------------------------------------------------------------------------------- | -------- |
+| bucket         | Name of the S3 bucket for state storage.                                            | `string` |
+| kms_key        | KMS key used to encrypt state.                                                       | `string` |
+| replica_bucket | Name of the replica S3 bucket for state storage, if cross-region replication is enabled. | `string` |
+| replica_kms_key| KMS key used to encrypt the replica state bucket, if cross-region replication is enabled. | `string` |
 
 [badge-checks]: https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml/badge.svg
 [badge-release]: https://img.shields.io/github/v/release/codeforamerica/tofu-modules-aws-backend?logo=github&label=Latest%20Release

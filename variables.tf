@@ -6,6 +6,15 @@ variable "bucket_suffix" {
   default     = false
 }
 
+variable "configure_cross_region_replication" {
+  type        = bool
+  description = <<-EOT
+    Whether to replicate the state bucket to another region for disaster
+    recovery. Enabled by default; set to `false` to disable.
+    EOT
+  default     = true
+}
+
 variable "create_dynamodb_table" {
   type        = bool
   description = <<-EOT
@@ -47,6 +56,16 @@ variable "key_recovery_period" {
 variable "project" {
   type        = string
   description = "Project that these resources are supporting."
+}
+
+variable "replica_region" {
+  type        = string
+  description = <<-EOT
+    Region to replicate the state bucket to. If not specified, defaults to
+    `us-west-2`, or `us-east-1` if the module is deployed in a `us-west-*`
+    region. Only used if `configure_cross_region_replication` is `true`.
+    EOT
+  default     = null
 }
 
 variable "state_version_expiration" {
