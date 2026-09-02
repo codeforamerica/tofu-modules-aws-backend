@@ -51,8 +51,9 @@ jobs:
         uses: actions/checkout@v6
       - name: Get the module name
         id: module_name
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
-          REPO_NAME="${{ github.event.repository.name }}"
           REPO_NAME="${REPO_NAME/tofu-modules-/}"
           MODULE_NAME="${REPO_NAME//-/_}"
           echo "name=${MODULE_NAME}" >> $GITHUB_OUTPUT
