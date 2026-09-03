@@ -120,6 +120,55 @@ deployed in a `us-west-*` region) with its own KMS key, and replicates every
 object in the state bucket to it. Set `configure_cross_region_replication` to
 `false` to disable, or `replica_region` to override the destination region.
 
+## Rebuilding after state loss
+
+If this module's own OpenTofu state is lost or corrupted but the underlying
+AWS resources still exist, rebuild management via `tofu import` instead of
+recreating everything from scratch. Bucket/alias/table names are derived
+from `project`/`environment` (see [Usage](#usage)); use `aws s3api
+list-buckets`, `aws kms list-aliases`, etc. to confirm the real names if
+unsure.
+
+```bash
+tofu import aws_s3_bucket.tfstate <bucket-name>
+tofu import aws_s3_bucket_public_access_block.tfstate <bucket-name>
+tofu import aws_s3_bucket_server_side_encryption_configuration.tfstate <bucket-name>
+tofu import aws_s3_bucket_versioning.tfstate <bucket-name>
+tofu import aws_s3_bucket_logging.tfstate <bucket-name>
+tofu import aws_s3_bucket_policy.tfstate <bucket-name>
+tofu import aws_s3_bucket_lifecycle_configuration.tfstate <bucket-name>
+tofu import aws_kms_key.backend <key-id>
+tofu import aws_kms_alias.backend "alias/<project>/<environment>/backend"
+# Only if create_dynamodb_table = true:
+tofu import 'aws_dynamodb_table.tfstate_lock["this"]' <environment>.tfstate
+```
+
+If `configure_cross_region_replication = true`, also import the replica-side
+resources, against the bucket/key/role in `replica_region`:
+
+```bash
+tofu import 'aws_s3_bucket.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_s3_bucket_public_access_block.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_s3_bucket_server_side_encryption_configuration.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_s3_bucket_versioning.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_s3_bucket_logging.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_s3_bucket_policy.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_s3_bucket_lifecycle_configuration.tfstate_replica["this"]' <replica-bucket-name>
+tofu import 'aws_kms_key.backend_replica["this"]' <replica-key-id>
+tofu import 'aws_kms_alias.backend_replica["this"]' "alias/<project>/<environment>/backend-replica"
+tofu import 'aws_iam_role.replication["this"]' <project>-<environment>-tfstate-replication
+tofu import 'aws_iam_role_policy.replication["this"]' <project>-<environment>-tfstate-replication:<project>-<environment>-tfstate-replication
+tofu import 'aws_s3_bucket_replication_configuration.tfstate["this"]' <bucket-name>
+```
+
+After importing every resource, run `tofu plan` and confirm it reports no
+changes — a non-empty diff means an import target or ID was wrong, not that
+real infrastructure needs to change.
+
+If the AWS resources themselves were destroyed (not just the state), skip
+this section and follow the normal [Usage](#usage) steps instead — there's
+nothing to import, only to recreate.
+
 ## Inputs
 
 > [!WARNING]
