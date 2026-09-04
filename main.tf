@@ -21,6 +21,7 @@ resource "aws_kms_key" "backend" {
     account_id : data.aws_caller_identity.identity.account_id,
     partition : data.aws_partition.current.partition,
     bucket_arn : aws_s3_bucket.tfstate.arn
+    deny_delete : !var.force_delete
   })
 
   tags = merge({ use = "infrastructure-state" }, var.tags)
@@ -42,6 +43,7 @@ resource "aws_kms_key" "backend_replica" {
     account_id : data.aws_caller_identity.identity.account_id,
     partition : data.aws_partition.current.partition,
     bucket_arn : aws_s3_bucket.tfstate_replica["this"].arn
+    deny_delete : !var.force_delete
   })
 
   tags = merge({ use = "infrastructure-state" }, var.tags)

@@ -83,7 +83,32 @@ resource "aws_s3_bucket" "tfstate_replica" {
   bucket_prefix = var.bucket_suffix ? "${local.prefix}-tfstate-replica-" : null
   force_destroy = var.force_delete
 
+  # Object Lock can only be enabled at bucket creation, so this is the one
+  # chance to have it on the replica. A bucket-policy deny only stops
+  # someone without PutBucketPolicy access; Object Lock backs that up.
+  object_lock_enabled = true
+
   tags = merge({ use = "infrastructure-state" }, var.tags)
+}
+
+resource "aws_s3_bucket_object_lock_configuration" "tfstate_replica" {
+  for_each = var.configure_cross_region_replication ? toset(["this"]) : toset([])
+
+  depends_on = [aws_s3_bucket_versioning.tfstate_replica]
+
+  region = local.effective_replica_region
+  bucket = aws_s3_bucket.tfstate_replica["this"].id
+
+  rule {
+    default_retention {
+      # GOVERNANCE, not COMPLIANCE: a principal with s3:BypassGovernanceRetention
+      # can still delete/shorten this if absolutely needed. Still stops anyone
+      # without that permission, including someone who's just removed the
+      # bucket policy.
+      mode = "GOVERNANCE"
+      days = 35
+    }
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "tfstate_replica" {
@@ -213,7 +238,7 @@ resource "aws_iam_role_policy" "replication" {
       },
       {
         Effect   = "Allow"
-        Action   = ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"]
+        Action   = ["s3:ReplicateObject", "s3:ReplicateTags"]
         Resource = ["${aws_s3_bucket.tfstate_replica["this"].arn}/*"]
       },
       {
@@ -228,7 +253,7 @@ resource "aws_iam_role_policy" "replication" {
       },
       {
         Effect   = "Allow"
-        Action   = ["kms:Encrypt"]
+        Action   = ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey*"]
         Resource = [aws_kms_key.backend_replica["this"].arn]
         Condition = {
           StringLike = {
@@ -258,8 +283,13 @@ resource "aws_s3_bucket_replication_configuration" "tfstate" {
 
     filter {}
 
+    # Deliberately not replicating delete markers: the replica is meant to
+    # be a backstop, not a mirror. Plain DeleteObject (needed for S3 native
+    # state locking's lock-file release) creates a delete marker; letting
+    # that replicate would hide the object in both copies at once, and the
+    # replica's own lifecycle rule would eventually purge the real version.
     delete_marker_replication {
-      status = "Enabled"
+      status = "Disabled"
     }
 
     source_selection_criteria {

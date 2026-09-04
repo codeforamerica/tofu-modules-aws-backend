@@ -117,8 +117,71 @@ deny statements (and, on the DynamoDB table, disables deletion protection).
 By default (`configure_cross_region_replication = true`), the module creates
 a second S3 bucket (in `us-west-2`, or `us-east-1` if the module itself is
 deployed in a `us-west-*` region) with its own KMS key, and replicates every
-object in the state bucket to it. Set `configure_cross_region_replication` to
-`false` to disable, or `replica_region` to override the destination region.
+object written to the state bucket **after replication is enabled** to it.
+Set `configure_cross_region_replication` to `false` to disable, or
+`replica_region` to override the destination region. If your primary region
+isn't in the US, the `us-west-2`/`us-east-1` default doesn't apply to you —
+set `replica_region` explicitly.
+
+The replica is a backstop, not a mirror: delete markers are **not**
+replicated, so deleting an object in the primary bucket doesn't delete it in
+the replica too. The replica bucket also has [Object Lock][s3-object-lock]
+enabled (`GOVERNANCE` mode, 35-day default retention) — this can only be
+turned on at bucket creation, so it's applied to the replica but not the
+(already-existing, for current consumers) primary bucket.
+
+`GOVERNANCE` mode stops anyone without the `s3:BypassGovernanceRetention`
+permission from deleting or shortening retention on an object for 35 days —
+including someone who's just removed the bucket policy. Unlike `COMPLIANCE`,
+it's still possible to delete a locked object if absolutely necessary, for
+someone with that permission. Note that OpenTofu's own `force_delete` /
+`force_destroy` may not automatically send the bypass on your behalf during
+`tofu destroy` — that's one of the things the live verification test is
+meant to confirm before this merges.
+
+Live replication only covers objects written after the config is applied —
+**existing objects in the bucket are not backfilled automatically.** When
+enabling this on a bucket that already has state files in it, run a one-time
+[S3 Batch Replication][s3-batch-replication] job to backfill them:
+
+```bash
+aws s3control create-job \
+  --account-id <account-id> \
+  --operation '{"S3ReplicateObject": {}}' \
+  --manifest-generator '{"S3JobManifestGenerator": {
+    "sourceBucket": "arn:aws:s3:::<bucket-name>",
+    "enableManifestOutput": false
+  }}' \
+  --priority 1 \
+  --role-arn <replication-role-arn> \
+  --report '{"Enabled": false}' \
+  --confirmation-required
+```
+
+Use the `replication` output's IAM role ARN, confirm the job in the S3
+console, then run it for real once the manifest looks right.
+
+## Recovering from a regional outage
+
+If the *primary region* (not just the bucket) is unavailable, the fix is
+different from [state loss](#rebuilding-after-state-loss): the replica
+bucket already has the data, you just need to point OpenTofu at it.
+
+1. Confirm the primary region is actually down, not just the one bucket —
+   if only the bucket is gone, use the import path above instead.
+2. In every *consumer* config (not this module itself), update the
+   `backend "s3"` block to point `bucket`/`region` at the replica values,
+   keeping the same `key`. Do this everywhere before applying anything
+   else — a consumer left pointed at the dead primary will fail to
+   lock/read state.
+3. Run `tofu init -reconfigure` against the replica backend and confirm
+   `tofu plan` shows no unexpected diff.
+4. Once the primary region recovers, decide whether to fail back (re-point
+   at the primary and let replication resume) or promote the replica
+   permanently — the latter needs a new replica target in a third region to
+   restore redundancy, and is a bigger decision than this module covers.
+5. Rolling back this procedure (primary recovers before you've cut over)
+   is just: don't change the backend block. No changes were destructive.
 
 ## Rebuilding after state loss
 
@@ -144,18 +207,23 @@ tofu import 'aws_dynamodb_table.tfstate_lock["this"]' <environment>.tfstate
 ```
 
 If `configure_cross_region_replication = true`, also import the replica-side
-resources, against the bucket/key/role in `replica_region`:
+resources, against the bucket/key/role in `replica_region`. Resources with a
+`region` argument need `@<replica-region>` appended to the import ID (AWS
+provider's [enhanced region support][enhanced-region-support]); IAM is
+global and the replication config lives on the primary bucket, so neither
+needs the suffix:
 
 ```bash
-tofu import 'aws_s3_bucket.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_s3_bucket_public_access_block.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_s3_bucket_server_side_encryption_configuration.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_s3_bucket_versioning.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_s3_bucket_logging.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_s3_bucket_policy.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_s3_bucket_lifecycle_configuration.tfstate_replica["this"]' <replica-bucket-name>
-tofu import 'aws_kms_key.backend_replica["this"]' <replica-key-id>
-tofu import 'aws_kms_alias.backend_replica["this"]' "alias/<project>/<environment>/backend-replica"
+tofu import 'aws_s3_bucket.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_public_access_block.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_server_side_encryption_configuration.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_versioning.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_logging.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_policy.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_lifecycle_configuration.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_s3_bucket_object_lock_configuration.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+tofu import 'aws_kms_key.backend_replica["this"]' <replica-key-id>@<replica-region>
+tofu import 'aws_kms_alias.backend_replica["this"]' alias/<project>/<environment>/backend-replica@<replica-region>
 tofu import 'aws_iam_role.replication["this"]' <project>-<environment>-tfstate-replication
 tofu import 'aws_iam_role_policy.replication["this"]' <project>-<environment>-tfstate-replication:<project>-<environment>-tfstate-replication
 tofu import 'aws_s3_bucket_replication_configuration.tfstate["this"]' <bucket-name>
@@ -190,7 +258,7 @@ nothing to import, only to recreate.
 | force_delete                       | Force delete resources on destroy. This must be set to true and applied before resources can be destroyed.                                                 | `bool`   | `false` |    no    |
 | key_recovery_period                | Recovery period for deleted KMS keys in days. Must be between `7` and `30`.                                                                                | `number` | `30`    |    no    |
 | replica_region                     | Region to replicate the state bucket to. Defaults to `us-west-2` (or `us-east-1` if deployed in a `us-west-*` region).                                     | `string` | `null`  |    no    |
-| state_version_expiration           | Age (in days) before non-current versions of the state file are expired.                                                                                   | `number` | `30`    |    no    |
+| state_version_expiration           | Age (in days) before non-current versions of the state file are expired.                                                                                   | `number` | `180`   |    no    |
 | tags                               | Optional tags to be applied to all resources.                                                                                                              | `list`   | `[]`    |    no    |
 
 ## Outputs
@@ -208,4 +276,7 @@ nothing to import, only to recreate.
 [latest-release]: https://github.com/codeforamerica/tofu-modules-aws-backend/releases/latest
 [migrate-state-lock]: #migrating-from-dynamodb-to-s3-state-locking
 [s3-locking]: https://opentofu.org/docs/language/settings/backends/s3/#s3-state-locking
+[s3-object-lock]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock-overview.html
+[s3-batch-replication]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-batch.html
+[enhanced-region-support]: https://registry.terraform.io/providers/hashicorp/aws/latest/docs/guides/enhanced-region-support
 [s3-locking-migrate]: https://opentofu.org/docs/language/settings/backends/s3/#migrating-from-dynamodb-to-s3-locking

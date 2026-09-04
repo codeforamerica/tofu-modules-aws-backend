@@ -73,7 +73,7 @@ variable "state_version_expiration" {
   description = <<-EOT
     Age (in days) before non-current versions of the state file are expired.
     EOT
-  default     = 30
+  default     = 180
 }
 
 variable "tags" {
