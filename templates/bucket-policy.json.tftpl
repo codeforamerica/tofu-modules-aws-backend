@@ -17,6 +17,19 @@
                     "aws:SecureTransport": false
                 }
             }
-        }
+        }%{ if deny_delete },
+        {
+            "Sid": "DenyPermanentStateDeletion",
+            "Effect": "Deny",
+            "Principal": "*",
+            "Action": [
+                "s3:DeleteBucket",
+                "s3:DeleteObjectVersion"
+            ],
+            "Resource": [
+                "arn:${partition}:s3:::${bucket}",
+                "arn:${partition}:s3:::${bucket}/*"
+            ]
+        }%{ endif }
     ]
 }

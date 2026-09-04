@@ -33,6 +33,16 @@
             ]
         }
       }
-    }
+    }%{ if deny_delete },
+    {
+      "Sid": "DenyKeyDeletion",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": [
+          "kms:ScheduleKeyDeletion",
+          "kms:DisableKey"
+      ],
+      "Resource": "*"
+    }%{ endif }
   ]
 }
