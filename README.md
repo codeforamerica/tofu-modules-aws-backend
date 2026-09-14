@@ -110,18 +110,29 @@ and S3 native state locking needs it for lock-file cleanup. Set
 `force_delete = true` and apply before you actually need to tear anything
 down.
 
+Both the primary and replica buckets also have [Object Lock][s3-object-lock]
+on by default (`GOVERNANCE` mode, 30 days) as a backstop against someone
+just removing the bucket policy — it still allows deletion for anyone with
+`s3:BypassGovernanceRetention`. Configurable via `object_lock`.
+
 ## Cross-region replication
 
-On by default, replicating to a second bucket in `us-west-2` (or
-`us-east-1` if you're already out west) with its own KMS key. Turn it off
-with `configure_cross_region_replication = false`, or point it elsewhere
-with `replica_region`.
+> [!WARNING]
+> This makes `backend` a multi-region KMS key, which can't be undone or
+> converted back — existing consumers upgrading into this will have their
+> encryption key destroyed and recreated on the next apply. Set
+> `configure_cross_region_replication = false` first if you need to avoid
+> that on an existing deployment.
 
-The replica is a backstop, not a mirror — delete markers don't replicate,
-and the replica bucket has [Object Lock][s3-object-lock] (`GOVERNANCE`
-mode, 35 days) since that can only be turned on at creation. `force_delete`
-still tears it down cleanly even with a locked object inside its retention
-window — verified against a real deployment.
+On by default, replicating to a second bucket in `us-west-2` (or
+`us-east-1` if you're already out west), encrypted with a true
+multi-region replica of the primary key. Turn replication off with
+`configure_cross_region_replication = false`, or point it elsewhere with
+`replica_region`.
+
+The replica is a backstop, not a mirror — delete markers don't replicate.
+`force_delete` still tears it down cleanly even with a locked object inside
+its retention window — verified against a real deployment.
 
 One gap worth knowing about: replication only covers objects written after
 it's turned on, so an existing bucket's current state file won't show up
@@ -155,6 +166,7 @@ lost.
 | environment                        | The environment for the project.                                                                                                                           | `string` | `"dev"` |    no    |
 | force_delete                       | Force delete resources on destroy. This must be set to true and applied before resources can be destroyed.                                                 | `bool`   | `false` |    no    |
 | key_recovery_period                | Recovery period for deleted KMS keys in days. Must be between `7` and `30`.                                                                                | `number` | `30`    |    no    |
+| object_lock                        | Object lock settings for the primary bucket and, if enabled, the replica.                                                                                   | `object` | `{}`    |    no    |
 | replica_region                     | Region to replicate the state bucket to. Defaults to `us-west-2` (or `us-east-1` if deployed in a `us-west-*` region).                                     | `string` | `null`  |    no    |
 | state_version_expiration           | Age (in days) before non-current versions of the state file are expired.                                                                                   | `number` | `180`   |    no    |
 | tags                               | Optional tags to be applied to all resources.                                                                                                              | `list`   | `[]`    |    no    |

@@ -5,13 +5,13 @@ locals {
 
 data "aws_region" "current" {}
 
-resource "aws_kms_key" "backend_replica" {
+resource "aws_kms_replica_key" "backend_replica" {
   for_each = var.configure_cross_region_replication ? toset(["this"]) : toset([])
 
   region                  = local.effective_replica_region
   description             = "OpenTofu backend replica encryption key for ${var.project} ${var.environment}"
   deletion_window_in_days = var.key_recovery_period
-  enable_key_rotation     = true
+  primary_key_arn         = aws_kms_key.backend.arn
   policy = templatefile("${path.module}/templates/key-policy.json.tftpl", {
     account_id : data.aws_caller_identity.identity.account_id,
     partition : data.aws_partition.current.partition,
@@ -27,7 +27,7 @@ resource "aws_kms_alias" "backend_replica" {
 
   region        = local.effective_replica_region
   name          = "alias/${var.project}/${var.environment}/backend-replica"
-  target_key_id = aws_kms_key.backend_replica["this"].id
+  target_key_id = aws_kms_replica_key.backend_replica["this"].id
 }
 
 resource "aws_s3_bucket" "tfstate_replica" {
@@ -38,27 +38,26 @@ resource "aws_s3_bucket" "tfstate_replica" {
   bucket_prefix = var.bucket_suffix ? "${local.prefix}-tfstate-replica-" : null
   force_destroy = var.force_delete
 
-  # Object Lock has to be turned on at creation, so this is the one shot
-  # we get at it for the replica.
-  object_lock_enabled = true
-
   tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
 resource "aws_s3_bucket_object_lock_configuration" "tfstate_replica" {
-  for_each = var.configure_cross_region_replication ? toset(["this"]) : toset([])
+  for_each = var.configure_cross_region_replication && var.object_lock.enabled ? toset(["this"]) : toset([])
 
+  # Object lock requires versioning to be enabled on the bucket first.
   depends_on = [aws_s3_bucket_versioning.tfstate_replica]
 
   region = local.effective_replica_region
   bucket = aws_s3_bucket.tfstate_replica["this"].id
 
-  rule {
-    default_retention {
-      # GOVERNANCE so it can still be removed with s3:BypassGovernanceRetention
-      # if we ever really need to.
-      mode = "GOVERNANCE"
-      days = 35
+  dynamic "rule" {
+    for_each = var.object_lock.days != null ? toset(["this"]) : toset([])
+
+    content {
+      default_retention {
+        mode = var.object_lock.mode
+        days = var.object_lock.days
+      }
     }
   }
 }
@@ -85,7 +84,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate_replica" 
     bucket_key_enabled = true
 
     apply_server_side_encryption_by_default {
-      kms_master_key_id = aws_kms_key.backend_replica["this"].arn
+      kms_master_key_id = aws_kms_replica_key.backend_replica["this"].arn
       sse_algorithm     = "aws:kms"
     }
   }
@@ -206,7 +205,7 @@ resource "aws_iam_role_policy" "replication" {
       {
         Effect   = "Allow"
         Action   = ["kms:Encrypt", "kms:Decrypt", "kms:GenerateDataKey*"]
-        Resource = [aws_kms_key.backend_replica["this"].arn]
+        Resource = [aws_kms_replica_key.backend_replica["this"].arn]
         Condition = {
           StringLike = {
             "kms:ViaService" = "s3.${local.effective_replica_region}.amazonaws.com"
@@ -252,7 +251,7 @@ resource "aws_s3_bucket_replication_configuration" "tfstate" {
       storage_class = "STANDARD"
 
       encryption_configuration {
-        replica_kms_key_id = aws_kms_key.backend_replica["this"].arn
+        replica_kms_key_id = aws_kms_replica_key.backend_replica["this"].arn
       }
     }
   }

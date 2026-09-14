@@ -15,6 +15,8 @@ tofu import aws_s3_bucket_policy.tfstate <bucket-name>
 tofu import aws_s3_bucket_lifecycle_configuration.tfstate <bucket-name>
 tofu import aws_kms_key.backend <key-id>
 tofu import aws_kms_alias.backend "alias/<project>/<environment>/backend"
+# Only if object_lock.enabled = true:
+tofu import 'aws_s3_bucket_object_lock_configuration.tfstate["this"]' <bucket-name>
 # Only if create_dynamodb_table = true:
 tofu import 'aws_dynamodb_table.tfstate_lock["this"]' <environment>.tfstate
 ```
@@ -34,8 +36,9 @@ tofu import 'aws_s3_bucket_versioning.tfstate_replica["this"]' <replica-bucket-n
 tofu import 'aws_s3_bucket_logging.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
 tofu import 'aws_s3_bucket_policy.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
 tofu import 'aws_s3_bucket_lifecycle_configuration.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
+# Only if object_lock.enabled = true:
 tofu import 'aws_s3_bucket_object_lock_configuration.tfstate_replica["this"]' <replica-bucket-name>@<replica-region>
-tofu import 'aws_kms_key.backend_replica["this"]' <replica-key-id>@<replica-region>
+tofu import 'aws_kms_replica_key.backend_replica["this"]' <replica-key-id>@<replica-region>
 tofu import 'aws_kms_alias.backend_replica["this"]' alias/<project>/<environment>/backend-replica@<replica-region>
 tofu import 'aws_iam_role.replication["this"]' <project>-<environment>-tfstate-replication
 tofu import 'aws_iam_role_policy.replication["this"]' <project>-<environment>-tfstate-replication:<project>-<environment>-tfstate-replication

@@ -11,6 +11,7 @@ resource "aws_kms_key" "backend" {
   description             = "OpenTofu backend encryption key for ${var.project} ${var.environment}"
   deletion_window_in_days = var.key_recovery_period
   enable_key_rotation     = true
+  multi_region            = var.configure_cross_region_replication
   policy = templatefile("${path.module}/templates/key-policy.json.tftpl", {
     account_id : data.aws_caller_identity.identity.account_id,
     partition : data.aws_partition.current.partition,

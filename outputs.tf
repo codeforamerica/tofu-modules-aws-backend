@@ -14,6 +14,6 @@ output "replica_bucket" {
 }
 
 output "replica_kms_key" {
-  value       = try(aws_kms_key.backend_replica["this"].id, null)
+  value       = try(aws_kms_replica_key.backend_replica["this"].id, null)
   description = "The KMS key used to encrypt the replica bucket, if enabled."
 }
