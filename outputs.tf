@@ -7,3 +7,13 @@ output "kms_key" {
   value       = aws_kms_key.backend.id
   description = "The KMS key used to encrypt the Terraform state."
 }
+
+output "replica_bucket" {
+  value       = try(aws_s3_bucket.tfstate_replica["this"].id, null)
+  description = "The replica S3 bucket, if replication is enabled."
+}
+
+output "replica_kms_key" {
+  value       = try(aws_kms_replica_key.backend_replica["this"].id, null)
+  description = "The KMS key used to encrypt the replica bucket, if enabled."
+}

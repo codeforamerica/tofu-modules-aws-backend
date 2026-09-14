@@ -36,6 +36,26 @@ resource "aws_s3_bucket_versioning" "tfstate" {
   }
 }
 
+resource "aws_s3_bucket_object_lock_configuration" "tfstate" {
+  for_each = var.object_lock.enabled ? toset(["this"]) : toset([])
+
+  # Object lock requires versioning to be enabled on the bucket first.
+  depends_on = [aws_s3_bucket_versioning.tfstate]
+
+  bucket = aws_s3_bucket.tfstate.id
+
+  dynamic "rule" {
+    for_each = var.object_lock.days != null ? toset(["this"]) : toset([])
+
+    content {
+      default_retention {
+        mode = var.object_lock.mode
+        days = var.object_lock.days
+      }
+    }
+  }
+}
+
 resource "aws_s3_bucket_logging" "tfstate" {
   bucket        = aws_s3_bucket.tfstate.id
   target_bucket = aws_s3_bucket.tfstate.id
@@ -48,6 +68,7 @@ resource "aws_s3_bucket_policy" "tfstate" {
     account : data.aws_caller_identity.identity.account_id
     partition : data.aws_partition.current.partition
     bucket : aws_s3_bucket.tfstate.bucket
+    deny_delete : !var.force_delete
   })
 }
 

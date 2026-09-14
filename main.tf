@@ -11,10 +11,12 @@ resource "aws_kms_key" "backend" {
   description             = "OpenTofu backend encryption key for ${var.project} ${var.environment}"
   deletion_window_in_days = var.key_recovery_period
   enable_key_rotation     = true
+  multi_region            = var.configure_cross_region_replication
   policy = templatefile("${path.module}/templates/key-policy.json.tftpl", {
     account_id : data.aws_caller_identity.identity.account_id,
     partition : data.aws_partition.current.partition,
     bucket_arn : aws_s3_bucket.tfstate.arn
+    deny_delete : !var.force_delete
   })
 
   tags = merge({ use = "infrastructure-state" }, var.tags)
