@@ -118,16 +118,15 @@ just removing the bucket policy — it still allows deletion for anyone with
 ## Cross-region replication
 
 > [!WARNING]
-> This makes `backend` a multi-region KMS key, which can't be undone or
-> converted back — existing consumers upgrading into this will have their
-> encryption key destroyed and recreated on the next apply. Set
-> `configure_cross_region_replication = false` first if you need to avoid
-> that on an existing deployment.
+> Turning this on makes `backend` a multi-region KMS key, which can't be
+> undone or converted back — on an existing deployment, that means the
+> current key gets destroyed and recreated on the next apply. You'll also
+> need permissions to operate in a second region.
 
-On by default, replicating to a second bucket in `us-west-2` (or
+Off by default. Set `configure_cross_region_replication = true` to
+replicate the state bucket to a second bucket in `us-west-2` (or
 `us-east-1` if you're already out west), encrypted with a true
-multi-region replica of the primary key. Turn replication off with
-`configure_cross_region_replication = false`, or point it elsewhere with
+multi-region replica of the primary key. Point it elsewhere with
 `replica_region`.
 
 The replica is a backstop, not a mirror — delete markers don't replicate.
@@ -159,7 +158,7 @@ existing AWS resources if this module's own state is lost.
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------- | :------: |
 | project                            | The name of the project.                                                                                                                                   | `string` | n/a     |   yes    |
 | bucket_suffix                      | Adds a random suffix to the bucket name to ensure its uniqueness.                                                                                          | `bool`   | `false` |    no    |
-| configure_cross_region_replication | Whether to replicate the state bucket to another region for disaster recovery.                                                                             | `bool`   | `true`  |    no    |
+| configure_cross_region_replication | Whether to replicate the state bucket to another region for disaster recovery.                                                                             | `bool`   | `false` |    no    |
 | create_dynamodb_table              | Whether to create a DynamoDB table to store the Terraform state lock. If you're exclusively using [S3 state locking][s3-locking], this is safe to disable. | `bool`   | `true`  |    no    |
 | environment                        | The environment for the project.                                                                                                                           | `string` | `"dev"` |    no    |
 | force_delete                       | Force delete resources on destroy. This must be set to true and applied before resources can be destroyed.                                                 | `bool`   | `false` |    no    |

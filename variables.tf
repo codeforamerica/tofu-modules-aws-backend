@@ -10,9 +10,11 @@ variable "configure_cross_region_replication" {
   type        = bool
   description = <<-EOT
     Whether to replicate the state bucket to another region for disaster
-    recovery. Enabled by default; set to `false` to disable.
+    recovery. Disabled by default, since it makes the KMS key multi-region
+    (a one-way change) and callers may need broader permissions to operate
+    in a second region.
     EOT
-  default     = true
+  default     = false
 }
 
 variable "create_dynamodb_table" {
