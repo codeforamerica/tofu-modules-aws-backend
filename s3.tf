@@ -36,6 +36,19 @@ resource "aws_s3_bucket_versioning" "tfstate" {
   }
 }
 
+resource "aws_s3_bucket_object_lock_configuration" "tfstate" {
+  depends_on = [aws_s3_bucket_versioning.tfstate]
+
+  bucket = aws_s3_bucket.tfstate.id
+
+  rule {
+    default_retention {
+      mode = "GOVERNANCE"
+      days = 35
+    }
+  }
+}
+
 resource "aws_s3_bucket_logging" "tfstate" {
   bucket        = aws_s3_bucket.tfstate.id
   target_bucket = aws_s3_bucket.tfstate.id

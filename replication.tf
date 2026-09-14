@@ -38,10 +38,6 @@ resource "aws_s3_bucket" "tfstate_replica" {
   bucket_prefix = var.bucket_suffix ? "${local.prefix}-tfstate-replica-" : null
   force_destroy = var.force_delete
 
-  # Object Lock has to be turned on at creation, so this is the one shot
-  # we get at it for the replica.
-  object_lock_enabled = true
-
   tags = merge({ use = "infrastructure-state" }, var.tags)
 }
 
