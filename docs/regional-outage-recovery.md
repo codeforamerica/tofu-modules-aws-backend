@@ -4,8 +4,7 @@ If the primary region itself is down (not just the bucket), point OpenTofu
 at the replica instead of trying to rebuild the primary.
 
 1. Confirm it's actually the region, not just the bucket — if only the
-   bucket is gone, use [rebuilding-after-state-loss.md](rebuilding-after-state-loss.md)
-   instead.
+   bucket is gone, use [rebuilding-after-state-loss.md] instead.
 2. In every consumer config (not this module), update the `backend "s3"`
    block to point at the replica's `bucket`/`region`, keeping the same
    `key`. Do this everywhere before applying anything else, or a consumer
@@ -18,3 +17,5 @@ at the replica instead of trying to rebuild the primary.
    this module covers on its own.
 5. If the primary comes back before you've cut over, there's nothing to
    roll back — you never changed the backend block.
+
+[rebuilding-after-state-loss.md]: rebuilding-after-state-loss.md

@@ -140,11 +140,9 @@ in the replica until something writes to it again. Back-fill it once with
 [S3 Batch Replication][s3-batch-replication] using the `replication` output's
 role ARN.
 
-See [docs/regional-outage-recovery.md](docs/regional-outage-recovery.md) for
-what to do if the primary region goes down, and
-[docs/rebuilding-after-state-loss.md](docs/rebuilding-after-state-loss.md)
-for reattaching to existing AWS resources if this module's own state is
-lost.
+See [regional-outage-recovery.md] for what to do if the primary region
+goes down, and [rebuilding-after-state-loss.md] for reattaching to
+existing AWS resources if this module's own state is lost.
 
 ## Inputs
 
@@ -185,6 +183,8 @@ lost.
 [code-checks]: https://github.com/codeforamerica/tofu-modules-aws-backend/actions/workflows/main.yaml
 [latest-release]: https://github.com/codeforamerica/tofu-modules-aws-backend/releases/latest
 [migrate-state-lock]: #migrating-from-dynamodb-to-s3-state-locking
+[rebuilding-after-state-loss.md]: docs/rebuilding-after-state-loss.md
+[regional-outage-recovery.md]: docs/regional-outage-recovery.md
 [s3-batch-replication]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/replication-batch.html
 [s3-locking]: https://opentofu.org/docs/language/settings/backends/s3/#s3-state-locking
 [s3-locking-migrate]: https://opentofu.org/docs/language/settings/backends/s3/#migrating-from-dynamodb-to-s3-locking
