@@ -8,6 +8,10 @@ and this project adheres to
 
 ## 1.2.1 (2026-09-14)
 
+### Feat
+
+- Add delete protection and cross-region replication to the state bucket. (#20)
+
 ## 1.2.0 (2026-03-30)
 
 ### Feat
